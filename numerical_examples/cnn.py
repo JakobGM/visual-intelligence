@@ -1,0 +1,153 @@
+import itertools
+from typing import List, Tuple
+
+from matplotlib import pyplot as plt
+
+import numpy as np
+
+
+def plot_matrix(matrix: np.ndarray, ax=None) -> None:
+    if not ax:
+        _, ax = plt.subplots(1, 1)
+
+    ax.imshow(matrix)
+    ax.tick_params(
+        axis='both',
+        which='both',
+        bottom=False,
+        top=False,
+        right=False,
+        labelbottom=False,
+        labelleft=False,
+    )
+
+    for row, col in itertools.product(
+        range(matrix.shape[0]),
+        range(matrix.shape[1]),
+    ):
+        ax.text(
+            x=col,
+            y=row,
+            s=matrix[row, col],
+            ha="center",
+            va="center",
+            color="w",
+            size=30,
+        )
+
+
+def windows(
+    array: np.ndarray,
+    window_shape: Tuple[int, int],
+    stride: Tuple[int, int],
+) -> List[List[np.ndarray]]:
+    array_height, array_width = array.shape
+    stride_height, stride_width = stride
+    window_height, window_width = window_shape
+
+    rows = []
+    for row in range(0, array_height, stride_height):
+        if row + window_height > array_height:
+            continue
+
+        cols = []
+        for col in range(0, array_width, stride_width):
+            if col + window_width > array_width:
+                continue
+
+            window = array[
+                row:row + window_height,
+                col:col + window_width,
+            ]
+
+            cols.append(window)
+
+        if cols:
+            rows.append(cols)
+
+    return rows
+
+
+class Kernel:
+    def __init__(self, weights: np.ndarray) -> None:
+        self.weights = np.array(weights)
+        self.shape = self.weights.shape
+
+    def __mul__(self, receptive_field: np.ndarray) -> float:
+        assert receptive_field.shape == self.shape
+        elementwise_multiplication = self.weights * receptive_field
+        summarization = elementwise_multiplication.sum()
+        return summarization
+
+    __rmul__ = __mul__
+
+    def convolute(
+        self,
+        array: np.ndarray,
+        stride: Tuple[int, int],
+    ) -> np.ndarray:
+        row_windows = windows(
+            array=array,
+            window_shape=self.shape,
+            stride=stride,
+        )
+
+        rows = []
+        for row_window in row_windows:
+            cols = []
+            for col_window in row_window:
+                convolution = self * col_window
+                cols.append(convolution)
+
+            if cols:
+                rows.append(cols)
+
+        return np.array(rows)
+
+    def plot(self) -> None:
+        plot_matrix(self.weights)
+
+    def plot_convolution(self, receptive_field: np.ndarray) -> None:
+        figure, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(15, 8))
+        elementwise_multiplication = self.weights * receptive_field
+        summarization = elementwise_multiplication.sum()
+
+        ax1.set_title("Kernel")
+        plot_matrix(self.weights, ax=ax1)
+
+        ax2.set_title("Receptive Field")
+        plot_matrix(receptive_field, ax=ax2)
+
+        ax3.set_title("Multiplication")
+        plot_matrix(elementwise_multiplication, ax=ax3)
+
+        ax4.set_title("Sum")
+        plot_matrix(np.array([[summarization]]), ax=ax4)
+
+
+class MaxPool:
+    def __init__(
+        self,
+        shape: Tuple[int, int],
+        stride: Tuple[int, int],
+    ) -> None:
+        self.shape = shape
+        self.stride = stride
+
+    def pool(self, array):
+        row_windows = windows(
+            array=array,
+            window_shape=self.shape,
+            stride=self.stride,
+        )
+
+        rows = []
+        for row_window in row_windows:
+            cols = []
+            for col_window in row_window:
+                cols.append(col_window.max())
+
+            if cols:
+                rows.append(cols)
+
+        return np.array(rows)

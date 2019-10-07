@@ -1,5 +1,5 @@
 import itertools
-from typing import List, Tuple
+from typing import Any, Callable, List, Tuple
 
 from matplotlib import pyplot as plt
 
@@ -40,6 +40,7 @@ def windows(
     array: np.ndarray,
     window_shape: Tuple[int, int],
     stride: Tuple[int, int],
+    apply: Callable[[np.ndarray], Any],
 ) -> List[List[np.ndarray]]:
     array_height, array_width = array.shape
     stride_height, stride_width = stride
@@ -59,13 +60,29 @@ def windows(
                 row:row + window_height,
                 col:col + window_width,
             ]
+            window = apply(window) if apply else window
 
             cols.append(window)
 
         if cols:
             rows.append(cols)
 
-    return rows
+    return np.array(rows)
+
+
+class ActivationFunction:
+
+    @staticmethod
+    def identity(x: np.ndarray) -> np.ndarray:
+        return x
+
+    @staticmethod
+    def sigmoid(x: np.ndarray) -> np.ndarray:
+        return 1 / (1 + np.exp(-x))
+
+    @staticmethod
+    def relu(x: np.ndarray) -> np.ndarray:
+        return np.maximum(x, 0)
 
 
 class Kernel:
@@ -85,24 +102,22 @@ class Kernel:
         self,
         array: np.ndarray,
         stride: Tuple[int, int],
+        padding: int = 0,
+        activation_function: Callable[
+            [np.ndarray],
+            np.ndarray
+        ] = ActivationFunction.identity,
+        bias: float = 0.0,
     ) -> np.ndarray:
-        row_windows = windows(
+        if padding:
+            array = np.pad(array, pad_width=padding)
+
+        return windows(
             array=array,
             window_shape=self.shape,
             stride=stride,
+            apply=lambda x: activation_function(self * x + bias),
         )
-
-        rows = []
-        for row_window in row_windows:
-            cols = []
-            for col_window in row_window:
-                convolution = self * col_window
-                cols.append(convolution)
-
-            if cols:
-                rows.append(cols)
-
-        return np.array(rows)
 
     def plot(self) -> None:
         plot_matrix(self.weights)
@@ -135,19 +150,9 @@ class MaxPool:
         self.stride = stride
 
     def pool(self, array):
-        row_windows = windows(
+        return windows(
             array=array,
             window_shape=self.shape,
             stride=self.stride,
+            apply=lambda x: x.max()
         )
-
-        rows = []
-        for row_window in row_windows:
-            cols = []
-            for col_window in row_window:
-                cols.append(col_window.max())
-
-            if cols:
-                rows.append(cols)
-
-        return np.array(rows)

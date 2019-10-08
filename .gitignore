@@ -102,3 +102,4 @@ venv.bak/
 
 # data
 **/data
+**/*.h5

@@ -57,6 +57,15 @@ def accuracy(
     return accuracy
 
 
+def iou(
+    y_pred: np.ndarray,
+    y_true: np.ndarray,
+) -> Tuple[int, int]:
+    tp, tn, fp, fn = confusions(y_pred=y_pred, y_true=y_true)
+    iou = tp / (tp + fp + fn)
+    return iou
+
+
 def plot_conditions(
     y_pred: np.ndarray,
     y_true: np.ndarray,

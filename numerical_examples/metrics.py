@@ -19,6 +19,8 @@ def confusions(
     y_pred: np.ndarray,
     y_true: np.ndarray,
 ) -> Tuple[int, int, int, int]:
+    y_true = y_true.flatten()
+    y_pred = y_pred.flatten()
     tp = int(np.logical_and(y_pred == 1, y_true == 1).sum())
     tn = int(np.logical_and(y_pred == 0, y_true == 0).sum())
     fp = int(np.logical_and(y_pred == 1, y_true == 0).sum())
@@ -63,6 +65,15 @@ def iou(
 ) -> Tuple[int, int]:
     tp, tn, fp, fn = confusions(y_pred=y_pred, y_true=y_true)
     iou = tp / (tp + fp + fn)
+    return iou
+
+
+def dice_loss(
+    y_pred: np.ndarray,
+    y_true: np.ndarray,
+) -> Tuple[int, int]:
+    tp, tn, fp, fn = confusions(y_pred=y_pred, y_true=y_true)
+    iou = (2 * tp) / (2 * tp + fp + fn)
     return iou
 
 

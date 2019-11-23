@@ -111,5 +111,5 @@ def output_gate(event, hidden_state, cell_state, parameters):
     )
     return (
         sigmoid(event_output + hidden_output)
-        * np.tanh(cell_state)
+        * tanh(cell_state)
     )

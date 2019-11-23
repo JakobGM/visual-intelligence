@@ -113,28 +113,3 @@ def output_gate(event, hidden_state, cell_state, parameters):
         sigmoid(event_output + hidden_output)
         * np.tanh(cell_state)
     )
-
-
-class TextData:
-    def __init__(self, path: Path):
-        assert path.exists()
-        self.path = path
-        self.text = path.read_text()
-        self.characters = list(set(self.text))
-        self.num_characters = len(self.characters)
-
-    def __len__(self):
-        return len(self.text)
-
-
-if __name__ == "__main__":
-    data = TextData(path=Path("data/shakespear.txt"))
-    parameters = Parameters(10, 10)
-    x = np.zeros((10,1))
-    h = np.zeros((10,1))
-    cell_state = np.zeros((10,1))
-    forget = forget_gate(event=x, hidden_state=h, prev_cell_state=cell_state, parameters=parameters)
-    input_ = input_gate(event=x, hidden_state=h, parameters=parameters)
-    print(forget)
-    print("---------")
-    print(input_)
